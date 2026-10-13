@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Run src/transform.py the way TRMNL's wrapper does and print its output.
+cd "$(dirname "$0")/.." || exit 1
+echo '{"trmnl":{}}' | python3 -c '
+import json, sys
+input = json.load(sys.stdin)
+exec(open("src/transform.py").read())
+out = run(input)
+print(json.dumps(out, indent=1))
+print("bytes:", len(json.dumps(out)), file=sys.stderr)
+'

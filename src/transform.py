@@ -3,17 +3,23 @@
 Runs on TRMNL's side after each poll. Fetches the YB Tracking race setup,
 leaderboard and the binary position feed, decodes the positions, and returns
 a compact set of merge variables for the Liquid template.
+
+TRMNL pastes this file into a wrapper script and calls run(input), so keep
+module level free of side effects. To try it locally: bin/run-transform
 """
 import datetime
 import struct
 import time
+import traceback
+from concurrent.futures import ThreadPoolExecutor
 
 import requests
 
 RACE = "ggr2026"
 BASE = "https://yb.tl"
 NM = 1852.0  # metres per nautical mile
-TIMEOUT = 4  # seconds; TRMNL kills the function after 5
+TIMEOUT = 3.5  # seconds per request; TRMNL kills the function after 5 in total
+HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; trmnl-ggr/1.0)", "Accept": "*/*"}
 
 
 def decode_positions(buf):
@@ -83,7 +89,7 @@ def short_name(full, limit=16):
     return short
 
 
-def course_segments(nodes, step=8):
+def course_segments(nodes, step=12):
     """Decimated course as [lon, lat] runs, split where it crosses the antimeridian."""
     pts = [[round(n["lon"], 1), round(n["lat"], 1)] for n in nodes]
     pts = pts[::step] + pts[-1:]
@@ -107,23 +113,30 @@ def race_day(start, now):
     return (d1 - d0).days + 1
 
 
-def run(input):
-    s = requests.Session()
-    setup = s.get(f"{BASE}/JSON/{RACE}/RaceSetup", timeout=TIMEOUT).json()
-    board = s.get(f"{BASE}/JSON/{RACE}/leaderboard", timeout=TIMEOUT).json()
-    positions = decode_positions(s.get(f"{BASE}/BIN/{RACE}/AllPositions3", timeout=TIMEOUT).content)
+def fetch(path):
+    r = requests.get(BASE + path, headers=HEADERS, timeout=TIMEOUT)
+    r.raise_for_status()
+    return r
+
+
+def build():
+    with ThreadPoolExecutor(max_workers=3) as pool:
+        f_setup = pool.submit(fetch, "/JSON/%s/RaceSetup" % RACE)
+        f_board = pool.submit(fetch, "/JSON/%s/leaderboard" % RACE)
+        f_pos = pool.submit(fetch, "/BIN/%s/AllPositions3" % RACE)
+        setup = f_setup.result().json()
+        board = f_board.result().json()
+        positions = decode_positions(f_pos.result().content)
 
     tags = {t["id"]: t for t in setup.get("tags", [])}
-    main_tag = next((t["id"] for t in tags.values() if t.get("sort") == 1), None)
     ranks = {}
-    tag_of = {}
     for tag in board.get("tags", []):
         for row in tag["teams"]:
-            tag_of.setdefault(row["id"], tag["id"])
             ranks.setdefault(row["id"], row)
 
     race_start = None
     boats = []
+    newest = 0
     for team in setup["teams"]:
         tid = team["id"]
         tag_id = team.get("tags", [None])[0]
@@ -134,19 +147,18 @@ def run(input):
         pos = positions.get(tid)
         race_start = race_start or team.get("start")
         dtf_m = row.get("dtf") if row.get("dtf") is not None else (pos or {}).get("dtf")
+        if pos:
+            newest = max(newest, pos["at"])
         boats.append({
-            "skipper": team["name"],
             "short": short_name(team["name"]),
             "boat": team.get("owner") or "",
-            "flag": team.get("flag") or "",
             "status": team.get("status") or row.get("status") or "",
             "chichester": tag_name == "Chichester Class",
             "rank": row.get("rankR"),
             "dtf_nm": round(dtf_m / NM) if dtf_m is not None else None,
             "d24_nm": max(0, round(row["d24"] / NM)) if row.get("d24") is not None else None,
-            "lat": pos["lat"] if pos else None,
-            "lon": pos["lon"] if pos else None,
-            "at": pos["at"] if pos else None,
+            "lat": round(pos["lat"], 2) if pos else None,
+            "lon": round(pos["lon"], 2) if pos else None,
         })
 
     # Overall order: racing boats by rank, then Chichester, then retired.
@@ -157,25 +169,24 @@ def run(input):
     boats.sort(key=order)
     for i, b in enumerate(boats, 1):
         b["pos"] = i
+        del b["rank"]
 
     now = int(time.time())
-    newest = max((b["at"] for b in boats if b["at"]), default=now)
     return {
-        "course": course_segments(setup.get("course", {}).get("nodes", [])),
         "race": {
             "title": setup.get("title", "Golden Globe Race"),
-            "start": race_start,
             "day": race_day(race_start, now),
-            "updated": newest,
+            "updated": newest or now,
             "racing": sum(1 for b in boats if b["status"] == "RACING"),
             "total": len(boats),
         },
         "boats": boats,
+        "course": course_segments(setup.get("course", {}).get("nodes", [])),
     }
 
 
-if __name__ == "__main__":  # local check: python3 src/transform.py
-    import json
-    out = run({})
-    print(json.dumps(out, indent=1))
-    print("bytes:", len(json.dumps(out)))
+def run(input):
+    try:
+        return build()
+    except Exception:  # surface the failure on the screen instead of a blank render
+        return {"error": traceback.format_exc()[-900:]}

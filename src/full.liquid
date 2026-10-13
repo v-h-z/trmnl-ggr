@@ -14,7 +14,8 @@
 {%- if boats == nil or boats == empty -%}
 <div class="layout layout--col layout--center">
   <span class="title">Golden Globe Race</span>
-  <span class="label">No fleet data yet. Check the Serverless tab and Debug Logs for this plugin.</span>
+  <span class="label">No fleet data yet.</span>
+  <span class="description">{% if error %}{{ error }}{% else %}The Serverless transform returned nothing. Check the Serverless tab and Debug Logs for this plugin.{% endif %}</span>
 </div>
 {%- else -%}
 <div class="layout layout--row gap--small">
