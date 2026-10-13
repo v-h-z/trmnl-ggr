@@ -11,6 +11,12 @@
   .ggr-tag { position: absolute; transform: translate(0, -50%); line-height: 1; font-weight: 700; font-size: 13px; padding: 0 2px; background: #fff; }
 </style>
 
+{%- if boats == nil or boats == empty -%}
+<div class="layout layout--col layout--center">
+  <span class="title">Golden Globe Race</span>
+  <span class="label">No fleet data yet. Check the Serverless tab and Debug Logs for this plugin.</span>
+</div>
+{%- else -%}
 <div class="layout layout--row gap--small">
   <div id="ggr-map" class="map ggr-map"></div>
   <div class="ggr-board">
@@ -38,6 +44,7 @@
     </table>
   </div>
 </div>
+{%- endif -%}
 
 <div class="title_bar">
   <span class="title">{{ race.title }} 2026</span>
@@ -45,7 +52,7 @@
 </div>
 
 <script>
-  var GGR = { boats: {{ boats | json }}, course: {{ course | json }} };
+  var GGR = { boats: {{ boats | json }} || [], course: {{ course | json }} || [] };
   function ggrWhenReady(cb) {
     var tries = 0;
     (function attempt() {
@@ -56,6 +63,7 @@
   }
   ggrWhenReady(function () {
     var el = "ggr-map";
+    if (!document.getElementById(el) || !GGR.boats.length) return;
     TRMNLMaps.watch(el, function () {
       var opts = TRMNLMaps.options({ el: el, preset: "outline", center: [-20, 0], zoom: 1, labels: false });
       // Chart look: grey land (a framework grey, so it dithers on 1-bit and is a real grey on 4-grey screens), white sea, nothing else.
