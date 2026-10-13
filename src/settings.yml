@@ -5,9 +5,14 @@ dark_mode: 'no'
 static_data: ''
 polling_verb: get
 framework_version: latest
-polling_url: https://yb.tl/JSON/ggr2026/leaderboard
-polling_headers: ''
 serverless_language: python
+refresh_interval_floor:
+polling_url: https://yb.tl/JSON/ggr2026/leaderboard
+polling_headers:
+polling_body:
+id: 504439
+oauth_enabled: 'false'
+oauth_pkce_enabled: 'no'
 name: Golden Globe Race
 description: GGR 2026 fleet map and leaderboard
 refresh_interval: 120
