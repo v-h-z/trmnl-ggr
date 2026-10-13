@@ -1,0 +1,24 @@
+<div class="layout">
+  <table class="table table--xsmall">
+    <thead>
+      <tr>
+        <th><span class="label label--small">#</span></th>
+        <th><span class="label label--small">Skipper</span></th>
+        <th class="ggr-num"><span class="label label--small">To go</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      {%- for b in boats -%}
+      <tr>
+        <td><span class="label">{% if b.status == "RACING" %}{{ b.pos }}{% else %}–{% endif %}</span></td>
+        <td><span class="label" data-clamp="1">{{ b.short }}</span></td>
+        <td class="ggr-num"><span class="label">{% if b.status == "RACING" %}{{ b.dtf_nm | number_with_delimiter }}{% else %}RET{% endif %}</span></td>
+      </tr>
+      {%- endfor -%}
+    </tbody>
+  </table>
+</div>
+<div class="title_bar">
+  <span class="title">Golden Globe Race</span>
+  <span class="instance">Day {{ race.day }}</span>
+</div>

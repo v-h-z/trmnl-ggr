@@ -1,0 +1,11 @@
+# TRMNLP configuration (local dev server only; not uploaded)
+---
+watch:
+  - .trmnlp.yml
+  - src
+custom_fields: {}
+variables:
+  trmnl: {}
+# author_contact_method only matters for published recipes
+ignored_lint_rules:
+  - author_contact_method

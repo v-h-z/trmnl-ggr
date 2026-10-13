@@ -1,0 +1,14 @@
+<div class="layout layout--col">
+  {%- for b in boats limit: 3 -%}
+  <div class="item">
+    <div class="content">
+      <span class="label">{{ b.pos }}. {{ b.short }}</span>
+      <span class="description">{{ b.dtf_nm | number_with_delimiter }} nm to go</span>
+    </div>
+  </div>
+  {%- endfor -%}
+</div>
+<div class="title_bar">
+  <span class="title">Golden Globe Race</span>
+  <span class="instance">Day {{ race.day }}</span>
+</div>

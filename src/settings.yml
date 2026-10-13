@@ -1,0 +1,13 @@
+---
+strategy: polling
+no_screen_padding: 'no'
+dark_mode: 'no'
+static_data: ''
+polling_verb: get
+framework_version: latest
+polling_url: https://yb.tl/JSON/ggr2026/leaderboard
+polling_headers: ''
+serverless_language: python
+name: Golden Globe Race
+description: GGR 2026 fleet map and leaderboard
+refresh_interval: 120

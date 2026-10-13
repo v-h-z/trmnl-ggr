@@ -1,0 +1,95 @@
+{%- comment -%} Golden Globe Race 2026 — fleet map + leaderboard. Data comes from src/transform.py (TRMNL Serverless). {%- endcomment -%}
+<script src="https://trmnl.com/js/maplibre-gl/5.24.0/maplibre-gl.js"></script>
+<link href="https://trmnl.com/js/maplibre-gl/5.24.0/maplibre-gl.css" rel="stylesheet">
+<style>
+  .ggr-map { width: 372px; flex: none; align-self: stretch; }
+  .ggr-board { flex: 1; min-width: 0; }
+  .ggr-board td, .ggr-board th { white-space: nowrap; padding-left: 5px; padding-right: 5px; }
+  .ggr-num { font-feature-settings: "tnum" 1; text-align: right; }
+  .ggr-pos { width: 22px; text-align: right; }
+  .ggr-retired { text-decoration: line-through; }
+  .ggr-tag { position: absolute; transform: translate(0, -50%); line-height: 1; font-weight: 700; font-size: 13px; padding: 0 2px; background: #fff; }
+</style>
+
+<div class="layout layout--row gap--small">
+  <div id="ggr-map" class="map ggr-map"></div>
+  <div class="ggr-board">
+    <table class="table table--xsmall">
+      <thead>
+        <tr>
+          <th class="ggr-pos"><span class="label label--small">#</span></th>
+          <th><span class="label label--small">Skipper</span></th>
+          <th><span class="label label--small">Boat</span></th>
+          <th class="ggr-num"><span class="label label--small">To go</span></th>
+          <th class="ggr-num"><span class="label label--small">24h</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {%- for b in boats -%}
+        <tr>
+          <td class="ggr-pos"><span class="label">{% if b.status == "RACING" %}{{ b.pos }}{% else %}–{% endif %}</span></td>
+          <td><span class="label{% if b.status != "RACING" %} ggr-retired{% endif %}" data-clamp="1">{{ b.short }}</span></td>
+          <td><span class="description" data-clamp="1">{{ b.boat }}{% if b.chichester %} (C){% endif %}</span></td>
+          <td class="ggr-num"><span class="label">{% if b.status == "RACING" %}{{ b.dtf_nm | number_with_delimiter }}{% else %}RET{% endif %}</span></td>
+          <td class="ggr-num"><span class="description">{% if b.status == "RACING" %}{{ b.d24_nm }}{% endif %}</span></td>
+        </tr>
+        {%- endfor -%}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="title_bar">
+  <span class="title">{{ race.title }} 2026</span>
+  <span class="instance">Day {{ race.day }} · {{ race.racing }}/{{ race.total }} racing · positions {{ race.updated | date: "%-d %b %H:%M" }} UTC</span>
+</div>
+
+<script>
+  var GGR = { boats: {{ boats | json }}, course: {{ course | json }} };
+  function ggrWhenReady(cb) {
+    var tries = 0;
+    (function attempt() {
+      if (window.TRMNLMaps && window.maplibregl) return cb();
+      if (++tries > 200) return;
+      setTimeout(attempt, 50);
+    })();
+  }
+  ggrWhenReady(function () {
+    var el = "ggr-map";
+    TRMNLMaps.watch(el, function () {
+      var opts = TRMNLMaps.options({ el: el, preset: "outline", center: [-20, 0], zoom: 1, labels: false });
+      // Chart look: black land, white sea, nothing else.
+      opts.style.layers = opts.style.layers.filter(function (l) { return l.type === "background" || l.id === "ocean"; });
+      opts.style.layers.forEach(function (l) {
+        if (l.type === "background") l.paint = { "background-color": "#000000" };
+        if (l.id === "ocean") l.paint = { "fill-color": "#ffffff", "fill-antialias": false };
+      });
+      var map = new maplibregl.Map(opts);
+      map.on("load", function () {
+        GGR.course.forEach(function (seg, i) { TRMNLMaps.route(map, seg, { id: "course" + i, width: 1, casing: false }); });
+        var racing = [];
+        GGR.boats.forEach(function (b, i) {
+          if (b.lat == null) return;
+          var p = [b.lon, b.lat];
+          var isRacing = b.status === "RACING";
+          if (isRacing) racing.push(p);
+          TRMNLMaps.dot(map, p, { id: "boat" + i, radius: b.pos === 1 ? 7 : 5, hollow: !isRacing });
+        });
+        if (racing.length) TRMNLMaps.fit(map, racing, { padding: 28, maxZoom: 4 });
+        // Rank numerals beside the top three, placed once the camera is final.
+        var host = document.getElementById(el);
+        GGR.boats.forEach(function (b) {
+          if (b.lat == null || b.status !== "RACING" || b.pos > 3) return;
+          var pt = map.project([b.lon, b.lat]);
+          var tag = document.createElement("span");
+          tag.className = "ggr-tag";
+          tag.textContent = b.pos;
+          tag.style.left = Math.round(pt.x + 9) + "px";
+          tag.style.top = Math.round(pt.y) + "px";
+          host.appendChild(tag);
+        });
+      });
+      return map;
+    });
+  });
+</script>

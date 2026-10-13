@@ -1,0 +1,30 @@
+<div class="layout layout--row gap--small">
+  <table class="table table--xsmall" data-table-limit="true">
+    <thead>
+      <tr>
+        <th><span class="label label--small">#</span></th>
+        <th><span class="label label--small">Skipper</span></th>
+        <th><span class="label label--small">Boat</span></th>
+        <th class="ggr-num"><span class="label label--small">To go</span></th>
+        <th class="ggr-num"><span class="label label--small">24h</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      {%- for b in boats -%}
+      {%- if b.status == "RACING" -%}
+      <tr>
+        <td><span class="label">{{ b.pos }}</span></td>
+        <td><span class="label" data-clamp="1">{{ b.short }}</span></td>
+        <td><span class="description" data-clamp="1">{{ b.boat }}</span></td>
+        <td class="ggr-num"><span class="label">{{ b.dtf_nm | number_with_delimiter }}</span></td>
+        <td class="ggr-num"><span class="description">{{ b.d24_nm }}</span></td>
+      </tr>
+      {%- endif -%}
+      {%- endfor -%}
+    </tbody>
+  </table>
+</div>
+<div class="title_bar">
+  <span class="title">Golden Globe Race</span>
+  <span class="instance">Day {{ race.day }} · positions {{ race.updated | date: "%-d %b %H:%M" }} UTC</span>
+</div>
