@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Run src/transform.py the way TRMNL's wrapper does and print its output.
+# Run src/transform.rb the way TRMNL's wrapper does and print its output.
 cd "$(dirname "$0")/.." || exit 1
-echo '{"trmnl":{}}' | python3 -c '
-import json, sys
-input = json.load(sys.stdin)
-exec(open("src/transform.py").read())
+echo '{"trmnl":{}}' | ruby -e '
+require "json"
+input = JSON.parse($stdin.read)
+load "src/transform.rb"
 out = run(input)
-print(json.dumps(out, indent=1))
-print("bytes:", len(json.dumps(out)), file=sys.stderr)
+puts JSON.pretty_generate(out)
+warn "bytes: #{JSON.generate(out).bytesize}"
 '

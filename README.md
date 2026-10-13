@@ -6,7 +6,7 @@ right. Data comes straight from the official YB Tracking feed for the race.
 
 ## How it works
 
-- `src/transform.py` runs on TRMNL **Serverless** (Python) after each poll. It
+- `src/transform.rb` runs on TRMNL **Serverless** (Ruby, standard library only) after each poll. It
   fetches three things from `yb.tl` for race `ggr2026`: `RaceSetup` (skippers,
   boats, course), `leaderboard` (ranks, distance to finish, last 24 h) and the
   binary `AllPositions3` feed, which it decodes with a port of YB's own
@@ -27,7 +27,7 @@ right. Data comes straight from the official YB Tracking feed for the race.
 trmnlp serve          # http://localhost:4567, live reload
 trmnlp build --png    # PNGs in _build/ through the same Firefox pipeline TRMNL uses
 trmnlp lint
-python3 src/transform.py   # run the transform alone and print its output
+bin/run-transform      # run the transform alone and print its output
 ```
 
 ## Deploy to TRMNL
@@ -43,7 +43,7 @@ the plugin to a playlist in the TRMNL web app.
 
 Manual alternative: Plugins → Private Plugins → New, strategy Polling with the
 URL from `settings.yml`, paste `src/full.liquid` into the Full markup tab and
-`src/transform.py` into the Serverless tab with Python selected.
+`src/transform.rb` into the Serverless tab with Ruby selected.
 
 ## Notes
 

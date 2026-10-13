@@ -5,7 +5,7 @@ dark_mode: 'no'
 static_data: ''
 polling_verb: get
 framework_version: latest
-serverless_language: python
+serverless_language: ruby
 refresh_interval_floor:
 polling_url: https://yb.tl/JSON/ggr2026/leaderboard
 polling_headers:
