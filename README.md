@@ -37,9 +37,14 @@ trmnlp login   # once; stores the API key in ~/.config/trmnlp/config.yml
 trmnlp push    # creates the private plugin and uploads markup + transform
 ```
 
-After the first push, `trmnlp pull` writes the plugin `id` into
-`src/settings.yml`; keep it so later pushes update the same plugin. Then add
-the plugin to a playlist in the TRMNL web app.
+The first push writes the plugin `id` into `src/settings.yml`; keep it so later
+pushes update the same plugin.
+
+Pushing does **not** fetch any data. TRMNL only refreshes a plugin that is on a
+device's playlist, so add it to a playlist and press Force Refresh on the plugin
+settings page. Until then "Your variables" shows only the `trmnl` namespace and
+the preview renders the "No fleet data yet" notice. That is normal, not a
+failure.
 
 Manual alternative: Plugins → Private Plugins → New, strategy Polling with the
 URL from `settings.yml`, paste `src/full.liquid` into the Full markup tab and
