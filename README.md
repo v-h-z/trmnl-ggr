@@ -46,6 +46,12 @@ settings page. Until then "Your variables" shows only the `trmnl` namespace and
 the preview renders the "No fleet data yet" notice. That is normal, not a
 failure.
 
+Automatic alternative: add the account API key as a `TRMNL_API_KEY` repository
+secret (`gh secret set TRMNL_API_KEY`) and every push to `main` that passes lint
+and tests deploys with `trmnlp push --force`. Without the secret the deploy job
+is skipped. Note that `--force` overwrites edits made in TRMNL's web editor, so
+the repo is the source of truth.
+
 Manual alternative: Plugins → Private Plugins → New, strategy Polling with the
 URL from `settings.yml`, paste `src/full.liquid` into the Full markup tab and
 `src/transform.rb` into the Serverless tab with Ruby selected.

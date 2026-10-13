@@ -45,6 +45,24 @@ jobs:
           name: snapshots
           path: tests/snapshots
 
-  # Deploying to TRMNL is done by hand with `trmnlp push` (see README). To
-  # automate it, restore trmnlp's scaffolded push job here and add a
-  # TRMNL_API_KEY repository secret.
+  push:
+    # Deploys to TRMNL when the TRMNL_API_KEY repository secret is set; skipped
+    # otherwise, so a clone without the secret still gets lint and tests.
+    needs: [lint, test]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    env:
+      TRMNL_API_KEY: ${{ secrets.TRMNL_API_KEY }}
+    steps:
+      - if: env.TRMNL_API_KEY == ''
+        run: echo "TRMNL_API_KEY secret not set, skipping deploy"
+      - if: env.TRMNL_API_KEY != ''
+        uses: actions/checkout@v6
+      - if: env.TRMNL_API_KEY != ''
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "4.0"
+      - if: env.TRMNL_API_KEY != ''
+        run: gem install trmnl_preview
+      - if: env.TRMNL_API_KEY != ''
+        run: trmnlp push --force
