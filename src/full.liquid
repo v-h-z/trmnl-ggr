@@ -58,10 +58,18 @@
     var el = "ggr-map";
     TRMNLMaps.watch(el, function () {
       var opts = TRMNLMaps.options({ el: el, preset: "outline", center: [-20, 0], zoom: 1, labels: false });
-      // Chart look: black land, white sea, nothing else.
+      // Chart look: grey land (a framework grey, so it dithers on 1-bit and is a real grey on 4-grey screens), white sea, nothing else.
+      var land = TRMNLPaint.toMapLibre(TRMNLPaint.bg("gray-50", { el: el }));
+      var landPaint = { "background-color": land.color || "#000000" };
+      if (land.pattern && land.pattern.opaque && land.pattern.keyColor) {
+        // 1-bit screens: paint the flat key colour and let the framework's dither pass swap in the tile art.
+        landPaint = { "background-color": land.pattern.keyColor };
+        var tiles = opts.style.metadata["trmnl:tiles"] = opts.style.metadata["trmnl:tiles"] || [];
+        if (tiles.indexOf(land.pattern.id) === -1) tiles.push(land.pattern.id);
+      }
       opts.style.layers = opts.style.layers.filter(function (l) { return l.type === "background" || l.id === "ocean"; });
       opts.style.layers.forEach(function (l) {
-        if (l.type === "background") l.paint = { "background-color": "#000000" };
+        if (l.type === "background") l.paint = landPaint;
         if (l.id === "ocean") l.paint = { "fill-color": "#ffffff", "fill-antialias": false };
       });
       var map = new maplibregl.Map(opts);
