@@ -131,7 +131,12 @@ def build
   threads.each_value { |t| t.report_on_exception = false } # #value re-raises in the caller
   setup = JSON.parse(threads[:setup].value)
   board = JSON.parse(threads[:board].value)
-  positions = decode_positions(threads[:positions].value.b)
+  raw_positions = threads[:positions].value.b
+  raise 'YB tracker returned no race setup' unless setup.is_a?(Hash) && setup['teams'].is_a?(Array)
+  raise 'YB tracker returned no leaderboard' unless board.is_a?(Hash) && board['tags'].is_a?(Array)
+  raise 'YB tracker returned no positions' if raw_positions.bytesize < 5
+
+  positions = decode_positions(raw_positions)
 
   tags = (setup['tags'] || []).to_h { |t| [t['id'], t] }
   ranks = {}
@@ -198,5 +203,5 @@ end
 def run(_input)
   build
 rescue StandardError => e # surface the failure on the screen instead of a blank render
-  { 'error' => "#{e.class}: #{e.message}\n#{e.backtrace&.first(5)&.join("\n")}" }
+  { 'error' => "#{e.class}: #{e.message}"[0, 300] }
 end
